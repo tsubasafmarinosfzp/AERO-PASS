@@ -4,168 +4,136 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AERO PASS</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --ana-navy: #003399;
             --ana-blue: #007FFF;
-            --glass: rgba(255, 255, 255, 0.1);
+            --glass-bg: rgba(255, 255, 255, 0.1);
             --glass-border: rgba(255, 255, 255, 0.2);
-            /* ステータスカラー */
-            --color-perfect: #2ecc71; /* ◎ */
-            --color-good: #3498db;    /* ○ */
-            --color-caution: #f1c40f; /* △ */
-            --color-review: #e74c3c;  /* × */
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: linear-gradient(135deg, #001f5c, #003399); color: white; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         
-        .header-logo { font-size: 24px; font-style: italic; font-weight: bold; text-align: center; margin: 20px 0; letter-spacing: 2px; }
-        .glass-panel { background: var(--glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid var(--glass-border); border-radius: 20px; padding: 15px; margin-bottom: 15px; }
-        
-        .screen { display: none; flex: 1; overflow-y: auto; padding: 0 20px 100px 20px; }
-        .active { display: block; }
+        /* 共通ヘッダー */
+        .app-header { height: 60px; display: none; align-items: center; justify-content: center; border-bottom: 1px solid var(--glass-border); background: rgba(0,0,0,0.1); }
+        .header-logo { font-size: 24px; font-style: italic; font-weight: bold; letter-spacing: 2px; }
 
-        /* 起動画面 */
-        #launch-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; background: rgba(0,31,92,0.95); }
-        
-        /* 進捗DB用スタイル */
-        .subject-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .status-badge { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; cursor: pointer; transition: 0.2s; border: 2px solid transparent; }
-        .status-none { background: rgba(255,255,255,0.1); color: #888; }
-        .status-perfect { background: var(--color-perfect); color: white; }
-        .status-good { background: var(--color-good); color: white; }
-        .status-caution { background: var(--color-caution); color: black; }
-        .status-review { background: var(--color-review); color: white; }
+        /* コンテンツエリア */
+        .screen { display: none; flex: 1; overflow-y: auto; padding: 20px 20px 100px 20px; }
+        .screen.active { display: block; }
+        .glass-panel { background: var(--glass-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid var(--glass-border); border-radius: 20px; padding: 15px; margin-bottom: 15px; }
 
-        /* ナビ */
-        #bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 75px; background: white; display: none; justify-content: space-around; align-items: center; border-top: 3px solid var(--ana-navy); z-index: 50; }
-        .nav-item { color: #666; font-size: 10px; text-align: center; flex: 1; cursor: pointer; }
+        /* 0. 起動画面 */
+        #launch-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; background: url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1000&q=80') center/cover; }
+        #launch-screen::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,51,153,0.5); z-index: -1; }
+
+        /* ボトムナビバー（白背景・紺境界線） */
+        #bottom-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 75px; 
+            background: #ffffff; display: none; justify-content: space-around; align-items: center; 
+            border-top: 1.5px solid #002D72; z-index: 50;
+        }
+        .nav-item { color: #888; font-size: 10px; text-align: center; flex: 1; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
         .nav-item.active { color: var(--ana-navy); font-weight: bold; }
+        .nav-icon { font-size: 24px; margin-bottom: 2px; }
+
+        /* 入力・ボタン */
+        input { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 10px; padding: 12px; color: white; margin-top: 10px; outline: none; }
+        .btn { background: var(--ana-blue); color: white; border: none; padding: 15px; border-radius: 30px; width: 100%; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; }
         
-        input { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 10px; padding: 12px; color: white; margin-top: 5px; outline: none; }
-        .btn { background: var(--ana-blue); color: white; border: none; padding: 15px; border-radius: 30px; width: 100%; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        /* グラフ用コンテナ */
+        .chart-container { width: 100%; height: 250px; margin-top: 10px; position: relative; }
     </style>
 </head>
 <body onload="initApp()">
 
     <div id="launch-screen">
-        <div class="header-logo">AERO PASS</div>
+        <div class="header-logo" style="font-size: 36px; margin-bottom: 20px;">AERO PASS</div>
         <div class="glass-panel" style="width: 90%; max-width: 350px;">
-            <p style="font-size: 12px; margin-bottom: 15px; text-align: center;">TODAY'S FLIGHT PLAN</p>
-            <input type="text" id="targetTime" placeholder="目標時間（例：6時間）">
-            <input type="text" id="keyTask" placeholder="重点課題（例：物理 20問）">
+            <p style="font-size: 12px; text-align: center;">TODAY'S FLIGHT PLAN</p>
+            <input type="text" id="targetTime" placeholder="目標勉強時間">
+            <input type="text" id="keyTask" placeholder="重点課題">
             <button class="btn" onclick="takeOff()">Take Off!</button>
         </div>
     </div>
 
-    <div id="home" class="screen">
-        <div class="header-logo">AERO PASS</div>
+    <header class="app-header" id="app-header"><div class="header-logo">AERO PASS</div></header>
+
+    <div id="home" class="screen active">
         <div class="glass-panel" style="text-align: center;">
             <div style="width: 100px; height: 100px; border-radius: 50%; border: 6px solid var(--ana-blue); margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 20px;">55%</div>
+            <p style="margin-top: 10px; font-size: 12px;">フライト進捗 : 53%</p>
         </div>
         <div class="glass-panel">
-            <h3 style="font-size: 12px; color: #ccc;">TODAY'S MISSION</h3>
-            <p id="dispTime" style="margin: 10px 0; font-weight: bold;"></p>
-            <p id="dispTask" style="font-size: 14px;"></p>
+            <p id="dispTime" style="margin-bottom: 8px; font-weight: bold;"></p>
+            <p id="dispTask" style="font-size: 14px; opacity: 0.9;"></p>
         </div>
     </div>
 
-    <div id="progress" class="screen">
-        <div class="header-logo">AERO PASS</div>
-        <h2 style="font-size: 16px; margin-bottom: 15px;">PROGRESS DATABASE</h2>
-        <div class="glass-panel" id="subject-list">
+    <div id="mock" class="screen">
+        <h2 style="font-size: 16px; margin-bottom: 15px;">MOCK EXAMS GROWTH</h2>
+        <div class="glass-panel">
+            <div class="chart-container">
+                <canvas id="mockChart"></canvas>
             </div>
-        <p style="font-size: 10px; color: #ccc; text-align: center;">アイコンをタップしてステータスを変更</p>
+        </div>
+        <div class="glass-panel">
+            <h3 style="font-size: 14px; margin-bottom: 10px;">模試スコアを入力 (FDR記録)</h3>
+            <div style="display: flex; gap: 5px;">
+                <input type="number" id="engScore" placeholder="英語">
+                <input type="number" id="gen1Score" placeholder="総合I">
+                <input type="number" id="gen2Score" placeholder="総合II">
+            </div>
+            <button class="btn" style="padding: 10px;" onclick="addMockRecord()">スコアを記録する</button>
+        </div>
     </div>
 
-    <div id="schedule" class="screen"><div class="header-logo">AERO PASS</div><div class="glass-panel"><h3>SCHEDULE</h3><p>開発中...</p></div></div>
-    <div id="mock" class="screen"><div class="header-logo">AERO PASS</div><div class="glass-panel"><h3>MOCK EXAMS</h3><p>開発中...</p></div></div>
-    <div id="settings" class="screen">
-        <div class="header-logo">AERO PASS</div>
-        <div class="glass-panel"><h3>MY PAGE</h3><p>ユーザー：翼くん</p></div>
-        <button onclick="clearData()" style="color: #ff4d4d; background: none; border: none; text-decoration: underline; margin-top: 20px;">全データをリセット</button>
-    </div>
+    <div id="schedule" class="screen"><div class="glass-panel"><h3>SCHEDULE</h3><p>開発中...</p></div></div>
+    <div id="progress" class="screen"><div class="glass-panel"><h3>PROGRESS DATABASE</h3><div id="subject-list"></div></div></div>
+    <div id="settings" class="screen"><div class="glass-panel"><h3>MY PAGE</h3><button onclick="clearData()" style="color:red; background:none; border:none; margin-top:20px;">全リセット</button></div></div>
 
     <nav id="bottom-nav">
-        <div class="nav-item active" onclick="showPage('home', this)">🏠<br>ホーム</div>
-        <div class="nav-item" onclick="showPage('schedule', this)">📅<br>計画</div>
-        <div class="nav-item" onclick="showPage('progress', this)">📊<br>進捗DB</div>
-        <div class="nav-item" onclick="showPage('mock', this)">🏆<br>模試</div>
-        <div class="nav-item" onclick="showPage('settings', this)">👤<br>設定</div>
+        <div class="nav-item active" onclick="showPage('home', this)"><span class="nav-icon">🏠</span><span>ホーム</span></div>
+        <div class="nav-item" onclick="showPage('schedule', this)"><span class="nav-icon">📅</span><span>スケジュール</span></div>
+        <div class="nav-item" onclick="showPage('mock', this)"><span class="nav-icon">🏆</span><span>模擬試験</span></div>
+        <div class="nav-item" onclick="showPage('progress', this)"><span class="nav-icon">💼</span><span>進捗DB</span></div>
+        <div class="nav-item" onclick="showPage('settings', this)"><span class="nav-icon">👤</span><span>マイページ</span></div>
     </nav>
 
     <script>
-        // 教材データの初期定義
-        let studyData = [
-            { name: "青チャート 1A", status: "none" },
-            { name: "漆原の物理", status: "none" },
-            { name: "英語過去問集", status: "none" },
-            { name: "総合時事・気象", status: "none" }
-        ];
+        let myChart; // グラフのインスタンス
+        let mockRecords = []; // 模試データの配列
 
         function initApp() {
-            // 保存された目標データの読み込み
             const savedTime = localStorage.getItem('targetTime');
             const savedTask = localStorage.getItem('keyTask');
             if (savedTime && savedTask) {
                 document.getElementById('dispTime').innerText = "目標：" + savedTime;
                 document.getElementById('dispTask').innerText = "重点：" + savedTask;
-                document.getElementById('launch-screen').style.display = 'none';
-                document.getElementById('bottom-nav').style.display = 'flex';
-                showPage('home', document.querySelector('.nav-item'));
+                launchToApp();
             }
+            
+            // 模試データの読み込み
+            const savedMock = localStorage.getItem('mockRecords');
+            if (savedMock) mockRecords = JSON.parse(savedMock);
+            
+            updateChart(); // 初回グラフ描画
+        }
 
-            // 保存された進捗データの読み込み
-            const savedStudy = localStorage.getItem('studyData');
-            if (savedStudy) {
-                studyData = JSON.parse(savedStudy);
-            }
-            renderProgress();
+        function launchToApp() {
+            document.getElementById('launch-screen').style.display = 'none';
+            document.getElementById('app-header').style.display = 'flex';
+            document.getElementById('bottom-nav').style.display = 'flex';
         }
 
         function takeOff() {
             const time = document.getElementById('targetTime').value;
             const task = document.getElementById('keyTask').value;
-            if(!time || !task) return alert('プランを入力してください');
+            if(!time || !task) return alert('入力してください');
             localStorage.setItem('targetTime', time);
             localStorage.setItem('keyTask', task);
             location.reload();
-        }
-
-        // 進捗DBを表示する関数
-        function renderProgress() {
-            const listArea = document.getElementById('subject-list');
-            listArea.innerHTML = ""; // 一旦クリア
-
-            studyData.forEach((item, index) => {
-                const div = document.createElement('div');
-                div.className = 'subject-item';
-                
-                let statusChar = "-";
-                let statusClass = "status-none";
-                if (item.status === 'perfect') { statusChar = "◎"; statusClass = "status-perfect"; }
-                if (item.status === 'good') { statusChar = "○"; statusClass = "status-good"; }
-                if (item.status === 'caution') { statusChar = "△"; statusClass = "status-caution"; }
-                if (item.status === 'review') { statusChar = "×"; statusClass = "status-review"; }
-
-                div.innerHTML = `
-                    <span style="font-size: 14px;">${item.name}</span>
-                    <div class="status-badge ${statusClass}" onclick="toggleStatus(${index})">${statusChar}</div>
-                `;
-                listArea.appendChild(div);
-            });
-        }
-
-        // ステータスを切り替える関数
-        function toggleStatus(index) {
-            const states = ['none', 'perfect', 'good', 'caution', 'review'];
-            let currentIdx = states.indexOf(studyData[index].status);
-            let nextIdx = (currentIdx + 1) % states.length;
-            studyData[index].status = states[nextIdx];
-            
-            // 保存して再描画
-            localStorage.setItem('studyData', JSON.stringify(studyData));
-            renderProgress();
         }
 
         function showPage(pageId, element) {
@@ -173,13 +141,76 @@
             document.getElementById(pageId).classList.add('active');
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             element.classList.add('active');
+            
+            // グラフ画面が表示された時に再描画（表示崩れ防止）
+            if(pageId === 'mock') updateChart();
+        }
+
+        // 模試データの追加
+        function addMockRecord() {
+            const eng = document.getElementById('engScore').value;
+            const g1 = document.getElementById('gen1Score').value;
+            const g2 = document.getElementById('gen2Score').value;
+
+            if(!eng || !g1 || !g2) return alert('全スコアを入力してください');
+
+            const record = {
+                date: new Date().toLocaleDateString(),
+                english: parseInt(eng),
+                gen1: parseInt(g1),
+                gen2: parseInt(g2)
+            };
+
+            mockRecords.push(record);
+            localStorage.setItem('mockRecords', JSON.stringify(mockRecords));
+            
+            // 入力欄をクリア
+            document.getElementById('engScore').value = "";
+            document.getElementById('gen1Score').value = "";
+            document.getElementById('gen2Score').value = "";
+
+            updateChart();
+            alert('FDR記録（模試データ）を保存しました！');
+        }
+
+        // Chart.jsによるグラフ描画
+        function updateChart() {
+            const ctx = document.getElementById('mockChart').getContext('2d');
+            
+            // 既存のグラフがあれば破棄して作り直す
+            if (myChart) myChart.destroy();
+
+            const labels = mockRecords.map(r => r.date);
+            const dataEng = mockRecords.map(r => r.english);
+            const dataG1 = mockRecords.map(r => r.gen1);
+            const dataG2 = mockRecords.map(r => r.gen2);
+
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels.length ? labels : ['データなし'],
+                    datasets: [
+                        { label: '英語', data: dataEng, borderColor: '#fff', backgroundColor: '#fff', tension: 0.3 },
+                        { label: '総合I', data: dataG1, borderColor: '#007FFF', backgroundColor: '#007FFF', tension: 0.3 },
+                        { label: '総合II', data: dataG2, borderColor: '#f1c40f', backgroundColor: '#f1c40f', tension: 0.3 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 150, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#fff' } },
+                        x: { grid: { display: false }, ticks: { color: '#fff' } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#fff', font: { size: 10 } } }
+                    }
+                }
+            });
         }
 
         function clearData() {
-            if(confirm('全てのデータを削除しますか？')) {
-                localStorage.clear();
-                location.reload();
-            }
+            if(confirm('全データを削除しますか？')) { localStorage.clear(); location.reload(); }
         }
     </script>
 </body>

@@ -6,200 +6,231 @@
     <title>AERO PASS</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* --- [1. DESIGN SECTION] --- */
+        /* =========================================
+           1. ベース設定 & 共通デザイン (ANAカラー)
+        ========================================= */
         :root {
-            --ana-navy: #002D72; /* ANAネイビー */
-            --ana-blue: #007FFF; /* ANAブルー */
-            --glass-bg: rgba(255, 255, 255, 0.12); /* すりガラス背景 */
-            --glass-border: rgba(255, 255, 255, 0.25); /* すりガラス境界線 */
-            --panel-dark: rgba(0, 20, 50, 0.6); /* 濃紺パネル */
-            --text-main: #ffffff; --text-sub: #a0b0c0; --danger: #ff4d4d;
+            --ana-navy: #002266;
+            --ana-blue: #007FFF;
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-border: rgba(255, 255, 255, 0.25);
+            --danger: #ff4d4d;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: linear-gradient(135deg, #001f5c 0%, #003399 100%); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
-        
-        /* 共通ヘッダー (Image 1-3参考) */
-        .app-header { height: 60px; display: none; align-items: center; justify-content: center; background: rgba(0, 45, 114, 0.4); backdrop-filter: blur(10px); border-bottom: 1px solid var(--glass-border); z-index: 100; }
-        .header-content { font-size: 20px; font-style: italic; font-weight: 900; letter-spacing: 2px; }
+        body {
+            background: linear-gradient(135deg, #001533 0%, #003399 100%);
+            color: #ffffff; height: 100vh; overflow: hidden; display: flex; flex-direction: column;
+        }
 
-        /* コンテンツ表示エリア */
-        .screen { display: none; flex: 1; overflow-y: auto; padding: 20px 20px 100px 20px; animation: fadeIn 0.3s; }
+        /* アプリ共通ヘッダー */
+        .app-header {
+            height: 60px; display: none; align-items: center; justify-content: center;
+            background: rgba(0, 34, 102, 0.6); backdrop-filter: blur(10px); border-bottom: 1px solid var(--glass-border); z-index: 100;
+        }
+        .app-header h1 { font-size: 24px; font-style: italic; font-weight: 900; letter-spacing: 2px; }
+
+        /* コンテンツエリア (スクロール可) */
+        .screen { display: none; flex: 1; overflow-y: auto; padding: 20px 20px 100px 20px; animation: fadeIn 0.4s; }
         .screen.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* グラスモーフィズムパネル (画像通りの質感) */
-        .panel { background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 20px; padding: 15px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); }
-        .logo-text { font-size: 28px; font-style: italic; font-weight: 900; text-align: center; margin-bottom: 20px; }
+        /* グラスパネル (すりガラス) */
+        .panel {
+            background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 16px; padding: 15px; margin-bottom: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .section-title { font-size: 14px; font-weight: bold; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
 
-        /* 0. 起動画面（ANAコクピット・スプラッシュ：Image 5） */
+        /* =========================================
+           2. 各画面の固有デザイン (画像完全再現)
+        ========================================= */
+        
+        /* 起動画面 (Image 5) */
         #launch-screen {
             display: flex; flex-direction: column; justify-content: center; align-items: center; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 200;
-            /* ※【重要】ここに実写のコクピット画像URLを設定します */
             background: url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1000&q=80') center/cover;
         }
-        #launch-screen::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,51,153,0.5); z-index: -1; }
+        #launch-screen::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,34,102,0.6); z-index: -1; }
         
-        /* ボトムナビ (ユーザー要望：白背景＋紺境界線) */
-        #bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 75px; background: #ffffff; display: none; justify-content: space-around; align-items: center; border-top: 1.5px solid var(--ana-navy); z-index: 150; }
-        .nav-item { color: #888; font-size: 10px; text-align: center; flex: 1; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
+        /* ホーム画面 (Image 4 左) */
+        .dials-wrapper { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .dial { background: #111; border: 2px solid #555; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 10px #000; }
+        .dial-sm { width: 50px; height: 50px; font-size: 10px; color: #888; }
+        .dial-lg { width: 80px; height: 80px; font-size: 30px; border-color: var(--ana-blue); }
+        .progress-ring { width: 100px; height: 100px; border-radius: 50%; border: 8px solid var(--ana-blue); border-top-color: transparent; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; }
+
+        /* スケジュール画面 (Image 4 右) */
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; font-size: 12px; margin-bottom: 10px; }
+        .calendar-day { padding: 5px; background: rgba(255,255,255,0.1); border-radius: 4px; }
+        
+        /* 模擬試験画面 (Image 1) */
+        .mock-header { text-align: center; font-size: 12px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--glass-border); }
+        .input-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 13px; }
+        .input-row input { width: 65%; margin: 0; }
+
+        /* 進捗DB画面 (Image 2) - 滑走路と本棚 */
+        .runway-box { background: #2c3e50; padding: 15px 10px; border-radius: 12px; border: 2px solid #34495e; margin-bottom: 15px; }
+        .runway { height: 35px; background: #222; border: 1px dashed rgba(255,255,255,0.4); margin-bottom: 10px; position: relative; border-radius: 4px; display: flex; align-items: center; }
+        .plane-icon { position: absolute; font-size: 20px; transition: 1s; }
+        .bookshelf { height: 120px; background: #8B5A2B; border: 4px solid #5C3A21; border-bottom: 15px solid #5C3A21; display: flex; align-items: flex-end; padding: 0 10px; gap: 6px; box-shadow: inset 0 10px 20px rgba(0,0,0,0.4); border-radius: 4px; }
+        .book { width: 28px; height: 90px; color: white; writing-mode: vertical-rl; font-size: 11px; text-align: center; padding: 5px; border-left: 2px solid rgba(255,255,255,0.3); box-shadow: -2px 0 5px rgba(0,0,0,0.3); border-radius: 2px 2px 0 0; }
+
+        /* 設定画面 (Image 3) - プロフィールとスライダー */
+        .profile-card { display: flex; align-items: center; gap: 15px; }
+        .avatar { width: 60px; height: 60px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; border: 2px solid var(--ana-blue); }
+        .slider-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; font-size: 13px; }
+        .slider-row input[type="range"] { width: 50%; height: 6px; -webkit-appearance: none; background: rgba(255,255,255,0.2); border-radius: 3px; outline: none; }
+        .slider-row input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--ana-blue); cursor: pointer; }
+        .btn-white { background: rgba(255,255,255,0.9); color: var(--ana-navy); border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+
+        /* =========================================
+           3. 共通UIパーツ (ボタン・ナビ)
+        ========================================= */
+        input[type="text"], input[type="number"] { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 10px; padding: 12px; color: white; outline: none; margin-bottom: 10px; }
+        .btn { background: var(--ana-blue); color: white; border: none; padding: 14px; border-radius: 30px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; box-shadow: 0 4px 15px rgba(0,127,255,0.4); }
+        
+        /* ボトムナビ (ご要望の白背景＋紺文字) */
+        #bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 80px; background: #ffffff; display: none; justify-content: space-around; align-items: center; border-top: 2px solid var(--ana-navy); z-index: 150; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-item { color: #888; font-size: 10px; text-align: center; flex: 1; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .nav-item.active { color: var(--ana-navy); font-weight: bold; }
-        .nav-icon { font-size: 22px; margin-bottom: 2px; }
-
-        /* 各画面の固有スタイル */
-        .progress-circle { width: 120px; height: 120px; border-radius: 50%; border: 8px solid var(--ana-blue); margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; background: rgba(0,0,0,0.2); }
-        .ai-card { border-left: 4px solid var(--ana-blue); padding-left: 15px; font-size: 14px; line-height: 1.6; font-style: italic; color: #d0e4ff; }
-        
-        .mock-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
-        .chart-bg { background: white; border-radius: 10px; padding: 5px; height: 180px; }
-
-        .runway { height: 35px; background: #333; border: 1px dashed rgba(255,255,255,0.5); margin-bottom: 15px; position: relative; display: flex; align-items: center; }
-        .plane { position: absolute; font-size: 20px; transition: 0.5s; }
-        .bookshelf { height: 100px; background: #8B4513; border-bottom: 10px solid #5D2E00; display: flex; align-items: flex-end; padding: 0 10px; gap: 4px; overflow-x: auto; }
-        .book { width: 25px; height: 80px; background: #007FFF; color: white; writing-mode: vertical-rl; font-size: 9px; text-align: center; border-left: 2px solid rgba(255,255,255,0.3); }
-
-        .avatar-circle { width: 60px; height: 60px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; }
-        .book-slider-row { display: flex; align-items: center; margin-bottom: 15px; font-size: 12px; }
-        .book-slider-row span { width: 100px; }
-        .book-slider-row input[type="range"] { flex: 1; margin: 0 10px; }
-
-        /* 入力フォーム・ボタン */
-        input { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 10px; padding: 12px; color: white; margin-top: 10px; outline: none; }
-        .btn { background: var(--ana-blue); color: white; border: none; padding: 15px; border-radius: 30px; width: 100%; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .btn-white { background: rgba(255,255,255,0.9); color: var(--ana-navy); font-size: 12px; }
-        .loading-spinner { width: 25px; height: 25px; border: 3px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .nav-icon { font-size: 24px; transition: 0.2s; }
+        .nav-item.active .nav-icon { transform: scale(1.1); }
     </style>
 </head>
 <body onload="initApp()">
 
     <div id="launch-screen">
-        <h1 class="logo-text" style="font-size: 42px; margin-bottom: 30px;">✈︎ AERO PASS</h1>
-        <div class="panel" style="width: 90%; max-width: 380px;">
-            <p style="text-align:center; font-size: 11px; margin-bottom:15px; letter-spacing: 2px;">TODAY'S FLIGHT PLAN</p>
+        <h1 style="font-size: 42px; font-style: italic; font-weight: 900; margin-bottom: 30px; text-shadow: 0 4px 15px rgba(0,0,0,0.8);">✈︎ AERO PASS</h1>
+        <div class="panel" style="width: 85%; max-width: 380px;">
+            <p style="text-align:center; font-size: 12px; letter-spacing: 1px; margin-bottom:20px;">TODAY'S FLIGHT PLAN</p>
             <input type="text" id="targetTime" placeholder="目標勉強時間（例: 6時間）">
-            <input type="text" id="keyTask" placeholder="重点課題（例: 物理 過去問）">
-            <button class="btn" onclick="takeOff()">Take Off!</button>
+            <input type="text" id="keyTask" placeholder="重点課題（例: 物理の電磁気）">
+            <button class="btn" style="margin-top:15px;" onclick="takeOff()">Take Off!</button>
         </div>
-        <div id="loading-panel" style="display:none; text-align:center; margin-top:20px;">
-            <div class="loading-spinner"></div><p style="font-size:12px; margin-top:10px;">AI作戦参謀、分析中...</p>
-        </div>
+        <p id="loading-msg" style="display:none; margin-top:20px; font-weight:bold;">✈️ AI作戦参謀、分析中...</p>
     </div>
 
-    <header class="app-header" id="app-header"><div class="header-content">✈︎ AERO PASS</div></header>
+    <header class="app-header" id="app-header">
+        <h1>AERO PASS</h1>
+    </header>
 
     <div id="home" class="screen">
-        <h1 class="logo-text">AERO PASS</h1>
-        <div class="panel" style="text-align: center; background: var(--panel-dark);">
-            <div class="progress-circle">55%</div>
-            <p style="font-size: 10px; color: #ccc; margin-top: 10px;">ANA Tntpn/White 進捗 : 53%</p>
+        <div class="panel" style="background: rgba(0, 20, 50, 0.7); text-align: center;">
+            <div class="dials-wrapper">
+                <div class="dial dial-sm">ALT</div>
+                <div class="dial dial-lg">✈️</div>
+                <div class="dial dial-sm">HDG</div>
+            </div>
+            <div class="progress-ring">55%</div>
+            <p style="font-size: 11px; color: #ccc; margin-top: 15px;">ANA Tntpn/White 絶好調 : 53%</p>
         </div>
         <div class="panel">
-            <h3 style="font-size: 13px; font-weight:bold; margin-bottom:10px;">今日の目標</h3>
-            <p id="dispTime" style="font-weight: bold;"></p>
-            <p id="dispTask" style="font-size: 13px; opacity: 0.8;"></p>
+            <h3 class="section-title">今日の目標</h3>
+            <p id="dispTime" style="font-size: 18px; font-weight: bold; margin-bottom: 5px;"></p>
+            <p id="dispTask" style="font-size: 14px; opacity: 0.9;"></p>
         </div>
-        <button class="btn-white btn" style="border-radius: 10px; margin-top:10px;">試験まであと <span id="daysLeft">--</span> 日</button>
     </div>
 
     <div id="schedule" class="screen">
-        <h1 class="logo-text">AERO PASS</h1>
         <div class="panel">
-            <h3 style="font-size: 13px; font-weight:bold; margin-bottom:10px;">Captainの授業</h3>
-            <div style="display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 10px;">
-                <span style="font-size: 20px; color: gold;">✈️</span>
-                <p id="aiStrategyContent" class="ai-card">分析結果を待機中...</p>
+            <h3 class="section-title">スケジュール</h3>
+            <div class="calendar-grid">
+                <div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div><div>日</div>
+                <div class="calendar-day">12</div><div class="calendar-day">13</div><div class="calendar-day" style="background:var(--ana-blue);">14</div><div class="calendar-day">15</div><div class="calendar-day">16</div><div class="calendar-day">17</div><div class="calendar-day">18</div>
             </div>
         </div>
+        <div class="panel" style="border-left: 4px solid gold;">
+            <h3 class="section-title" style="color: gold;">✈️ AI Captainの授業</h3>
+            <p id="aiStrategyContent" style="font-size: 13px; font-style: italic; line-height: 1.5;">分析結果を待機中...</p>
+        </div>
         <div class="panel">
-            <h3 style="font-size: 13px; font-weight:bold; margin-bottom:10px;">タスクリスト</h3>
-            <div style="font-size: 13px; display:grid; gap:8px;">
-                <label><input type="checkbox" checked> 物理は電磁気を重点的に</label>
-                <label><input type="checkbox"> 英語長文過去問集 1年分</label>
-            </div>
+            <h3 class="section-title">今日のタスクリスト</h3>
+            <label style="display:block; margin-bottom:10px; font-size:14px;"><input type="checkbox" checked> 物理は電磁気を重点的に</label>
+            <label style="display:block; font-size:14px;"><input type="checkbox"> 英語長文読解</label>
         </div>
     </div>
 
     <div id="mock" class="screen">
-        <div style="text-align:center; font-size:10px; margin-bottom:10px; background: rgba(0,0,0,0.2); padding:5px;">FDR 記録 MODE</div>
-        <div class="mock-grid">
-            <div class="panel">
-                <h3 style="font-size: 13px; font-weight:bold; margin-bottom:10px;">スコア記録</h3>
-                <div style="display:grid; gap:8px;">
-                    <div style="display:flex; align-items:center; font-size:12px;"><label style="width:60px;">英語</label><input type="number" id="engScore" placeholder="/100"></div>
-                    <div style="display:flex; align-items:center; font-size:12px;"><label style="width:60px;">総I</label><input type="number" id="gen1Score" placeholder="/100"></div>
-                    <div style="display:flex; align-items:center; font-size:12px;"><label style="width:60px;">総II</label><input type="number" id="gen2Score" placeholder="/150"></div>
-                </div>
-                <button class="btn" style="padding:10px; font-size:13px; margin-top:15px;" onclick="addMockRecord()">記録を保存</button>
-            </div>
-            <div class="panel">
-                <h3 style="font-size: 13px; font-weight:bold; margin-bottom:10px;">ギャップ分析</h3>
-                <div class="chart-bg"><canvas id="mockChart"></canvas></div>
-            </div>
+        <div class="mock-header">🏆 模擬試験＆他テスト記録 (FDRモード)</div>
+        <div class="panel">
+            <h3 class="section-title">スコア記録 (FDRモード)</h3>
+            <div class="input-row"><label>英語：</label><input type="number" id="engScore" placeholder="入力 / 100"></div>
+            <div class="input-row"><label>総合I：</label><input type="number" id="gen1Score" placeholder="入力 / 100"></div>
+            <div class="input-row"><label>総合II：</label><input type="number" id="gen2Score" placeholder="入力 / 150"></div>
+            <button class="btn" style="padding:12px; font-size:14px; margin-top:10px;" onclick="addMockRecord()">スコアを記録</button>
+        </div>
+        <div class="panel" style="background: #fff; color: #000;">
+            <h3 class="section-title" style="color: #000;">ギャップ分析：目標達成への飛行計画</h3>
+            <div style="height: 180px;"><canvas id="mockChart"></canvas></div>
         </div>
     </div>
 
     <div id="progress" class="screen">
-        <h1 class="logo-text" style="font-size:22px;">進捗 DB<br><small>滑走路進行状況図</small></h1>
-        <div class="panel" style="background: rgba(0,0,0,0.3); border-color:#555;">
-            <div class="runway"><div id="plane1" class="plane" style="left: 60%;">✈️</div></div>
-            <div class="runway"><div id="plane2" class="plane" style="left: 30%;">✈️</div></div>
-        </div>
-        <div class="bookshelf" id="bookshelf">
+        <h2 style="font-size: 18px; text-align: center; margin-bottom: 20px;">進捗管理<br><small style="font-size: 12px; font-weight:normal;">(滑走路進行状況図)</small></h2>
+        
+        <div class="panel">
+            <div style="font-size: 12px; margin-bottom:10px;">◎ 完璧　○ 普通　△ 注意　× 要復習</div>
+            <div class="runway-box">
+                <div class="runway"><div class="plane-icon" style="left: 70%;">✈️</div></div>
+                <div class="runway"><div class="plane-icon" style="left: 40%;">✈️</div></div>
             </div>
+        </div>
+        
+        <div class="bookshelf">
+            <div class="book" style="background: #2ecc71; height: 100px;">青チャート1A</div>
+            <div class="book" style="background: #e74c3c; height: 110px;">漆原の物理</div>
+            <div class="book" style="background: #3498db; height: 95px;">英語過去問集</div>
+            <div class="book" style="background: #f1c40f; height: 85px; color:black;">総合時事・気象</div>
+        </div>
     </div>
 
     <div id="mypage" class="screen">
-        <h1 class="logo-text">MY PAGE</h1>
-        <div class="panel">
-            <h3 style="font-size: 13px; font-weight:bold; margin-bottom:10px;">MAINTENANCE HANGAR</h3>
-            <div style="display:flex; align-items:center; gap:15px; background: rgba(0,0,0,0.2); padding:10px; border-radius:10px;">
-                <div class="avatar-circle">👨‍✈️</div>
-                <div><p>翼くん</p><p style="font-size:10px; color:#ccc;">目標点：285/350</p></div>
+        <div class="panel profile-card">
+            <div class="avatar">👨‍✈️</div>
+            <div>
+                <h3 style="font-size: 16px; margin-bottom:4px;">ユーザー名：翼くん ⚙️</h3>
+                <p style="font-size: 12px; color: #ccc;">目標点：285/350点 🎯</p>
             </div>
         </div>
-        <div class="panel" id="book-sliders">
-            <h3 style="font-size: 13px; font-weight:bold; margin-bottom:10px;">参考書管理</h3>
-            </div>
-        <button class="btn" style="background:var(--danger); font-size:12px;" onclick="clearData()">全フライトデータの初期化</button>
+        <div class="panel">
+            <h3 class="section-title">参考書・教材管理</h3>
+            <div class="slider-row"><span>青チャート1A</span><input type="range" value="35"><span>35%</span></div>
+            <div class="slider-row"><span>漆原の物理</span><input type="range" value="20"><span>20%</span></div>
+            <div class="slider-row"><span>英語過去問集</span><input type="range" value="50"><span>50%</span></div>
+        </div>
+        <div class="panel">
+            <h3 class="section-title">データ・フライトデータ管理</h3>
+            <button class="btn btn-white">✈️ Export (データ出力)</button>
+            <button class="btn btn-white">📤 Import (データ読込)</button>
+            <button class="btn" style="background: var(--danger); margin-top:10px;" onclick="clearData()">初期化</button>
+        </div>
     </div>
 
     <nav id="bottom-nav">
         <div class="nav-item active" onclick="showPage('home', this)"><span class="nav-icon">🏠</span>ホーム</div>
-        <div class="nav-item" onclick="showPage('schedule', this)"><span class="nav-icon">📅</span>計画</div>
-        <div class="nav-item" onclick="showPage('mock', this)"><span class="nav-icon">🏆</span>模試</div>
-        <div class="nav-item" onclick="showPage('progress', this)"><span class="nav-icon">💼</span>進捗DB</div>
-        <div class="nav-item" onclick="showPage('settings', this)"><span class="nav-icon">👤</span>マイページ</div>
+        <div class="nav-item" onclick="showPage('schedule', this)"><span class="nav-icon">📅</span>スケジュール</div>
+        <div class="nav-item" onclick="showPage('mock', this)"><span class="nav-icon">🏆</span>模擬試験</div>
+        <div class="nav-item" onclick="showPage('progress', this)"><span class="nav-icon">📊</span>進捗DB</div>
+        <div class="nav-item" onclick="showPage('mypage', this)"><span class="nav-icon">👤</span>マイページ</div>
     </nav>
 
     <script>
-        /* --- [2. LOGIC SECTION] --- */
-        const API_KEY = 'ここにあなたのAPIキーを入れる'; 
-        const EXAM_DATE = new Date('2026-07-15');
+        const API_KEY = 'ここにあなたのAPIキーを入れる';
         let myChart;
         let mockRecords = JSON.parse(localStorage.getItem('mockRecords')) || [];
-        let booksData = [
-            { name: "青チャート1A", color: "#2ecc71", progress: 35 },
-            { name: "漆原の物理", color: "#e67e22", progress: 20 },
-            { name: "英語過去問", color: "#3498db", progress: 50 },
-            { name: "総合時事", color: "#f1c40f", progress: 10 }
-        ];
 
         function initApp() {
             const savedTime = localStorage.getItem('targetTime');
             const savedTask = localStorage.getItem('keyTask');
-            const days = Math.ceil((EXAM_DATE - new Date()) / (1000 * 60 * 60 * 24));
-            document.getElementById('daysLeft').innerText = days;
-
             if (savedTime && savedTask) {
                 document.getElementById('dispTime').innerText = "目標時間: " + savedTime;
                 document.getElementById('dispTask').innerText = "重点課題: " + savedTask;
                 document.getElementById('launch-screen').style.display = 'none';
-                document.getElementById('bottom-nav').style.display = 'flex';
                 document.getElementById('app-header').style.display = 'flex';
+                document.getElementById('bottom-nav').style.display = 'flex';
                 document.getElementById('aiStrategyContent').innerText = localStorage.getItem('lastAdvice') || "戦略待機中...";
             }
-            renderBookshelf();
-            renderSettingsSliders();
         }
 
         async function takeOff() {
@@ -207,11 +238,11 @@
             const task = document.getElementById('keyTask').value;
             if(!time || !task) return alert('入力してください');
             
-            document.getElementById('loading-panel').style.display = 'block';
+            document.getElementById('loading-msg').style.display = 'block';
             localStorage.setItem('targetTime', time);
             localStorage.setItem('keyTask', task);
 
-            const prompt = `あなたは航空大学校合格コーチです。今日${time}勉強し、${task}に取り組むTsubasaへ、ANAのパイロットのような凛とした口調で、やる気が出る150文字程度のアドバイスを。`;
+            const prompt = `あなたは航空大学校合格コーチです。今日${time}勉強し、${task}に取り組むTsubasaへ、ANAのパイロット風のやる気が出る100文字のアドバイスを。`;
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -230,36 +261,7 @@
             document.getElementById(pageId).classList.add('active');
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             element.classList.add('active');
-            if(pageId === 'mock') updateChart();
-        }
-
-        function renderBookshelf() {
-            const bookshelf = document.getElementById('bookshelf');
-            if(!bookshelf) return;
-            bookshelf.innerHTML = "";
-            booksData.forEach(book => {
-                bookshelf.innerHTML += `<div class="book" style="background:${book.color};">${book.name}</div>`;
-            });
-        }
-
-        function renderSettingsSliders() {
-            const container = document.getElementById('book-sliders');
-            if(!container) return;
-            container.innerHTML = `<h3 style="font-size: 13px; font-weight:bold; margin-bottom:10px;">教材管理</h3>`;
-            booksData.forEach((book, idx) => {
-                container.innerHTML += `
-                    <div class="book-slider-row">
-                        <span>${book.name}</span>
-                        <input type="range" value="${book.progress}" onchange="updateProgress(${idx}, this.value)">
-                        <span>${book.progress}%</span>
-                    </div>`;
-            });
-        }
-
-        function updateProgress(idx, val) {
-            booksData[idx].progress = val;
-            renderBookshelf(); // 本棚を再描画
-            renderSettingsSliders(); // スライダーを再描画
+            if(pageId === 'mock') setTimeout(updateChart, 100);
         }
 
         function addMockRecord() {
@@ -279,13 +281,13 @@
                 type: 'line',
                 data: {
                     labels: mockRecords.map(r => r.date),
-                    datasets: [{ label: '総合スコア', data: mockRecords.map(r => r.score), borderColor: '#002D72', tension: 0.3, fill: true, backgroundColor: 'rgba(0,45,114,0.1)' }]
+                    datasets: [{ label: '総合', data: mockRecords.map(r => r.score), borderColor: '#002D72', backgroundColor: 'rgba(0,45,114,0.2)', fill: true, tension: 0.3 }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero:true, max:350 } } }
             });
         }
 
-        function clearData() { if(confirm('全リセット？')) { localStorage.clear(); location.reload(); } }
+        function clearData() { if(confirm('リセット？')) { localStorage.clear(); location.reload(); } }
     </script>
 </body>
 </html>

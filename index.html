@@ -7,133 +7,151 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --ana-navy: #003399;
-            --ana-blue: #007FFF;
-            --glass-bg: rgba(255, 255, 255, 0.1);
-            --glass-border: rgba(255, 255, 255, 0.2);
+            --ana-navy: #003399; --ana-blue: #007FFF;
+            --glass-bg: rgba(255, 255, 255, 0.1); --glass-border: rgba(255, 255, 255, 0.2);
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: linear-gradient(135deg, #001f5c, #003399); color: white; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         
-        /* 共通ヘッダー */
-        .app-header { height: 60px; display: none; align-items: center; justify-content: center; border-bottom: 1px solid var(--glass-border); background: rgba(0,0,0,0.1); }
+        .app-header { height: 60px; display: none; align-items: center; justify-content: center; border-bottom: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); }
         .header-logo { font-size: 24px; font-style: italic; font-weight: bold; letter-spacing: 2px; }
 
-        /* コンテンツエリア */
         .screen { display: none; flex: 1; overflow-y: auto; padding: 20px 20px 100px 20px; }
         .screen.active { display: block; }
         .glass-panel { background: var(--glass-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid var(--glass-border); border-radius: 20px; padding: 15px; margin-bottom: 15px; }
 
-        /* 0. 起動画面 */
         #launch-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; background: url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1000&q=80') center/cover; }
         #launch-screen::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,51,153,0.5); z-index: -1; }
 
-        /* ボトムナビバー（白背景・紺境界線） */
-        #bottom-nav {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: 75px; 
-            background: #ffffff; display: none; justify-content: space-around; align-items: center; 
-            border-top: 1.5px solid #002D72; z-index: 50;
-        }
+        #bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 75px; background: white; display: none; justify-content: space-around; align-items: center; border-top: 1.5px solid #002D72; z-index: 50; }
         .nav-item { color: #888; font-size: 10px; text-align: center; flex: 1; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
         .nav-item.active { color: var(--ana-navy); font-weight: bold; }
         .nav-icon { font-size: 24px; margin-bottom: 2px; }
 
-        /* 入力・ボタン */
         input { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 10px; padding: 12px; color: white; margin-top: 10px; outline: none; }
         .btn { background: var(--ana-blue); color: white; border: none; padding: 15px; border-radius: 30px; width: 100%; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; }
         
-        /* グラフ用コンテナ */
-        .chart-container { width: 100%; height: 250px; margin-top: 10px; position: relative; }
+        .ai-report { font-size: 13px; line-height: 1.6; color: #eef; font-style: italic; white-space: pre-wrap; }
+        .loading-spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body onload="initApp()">
 
     <div id="launch-screen">
         <div class="header-logo" style="font-size: 36px; margin-bottom: 20px;">AERO PASS</div>
-        <div class="glass-panel" style="width: 90%; max-width: 350px;">
+        <div id="input-panel" class="glass-panel" style="width: 90%; max-width: 350px;">
             <p style="font-size: 12px; text-align: center;">TODAY'S FLIGHT PLAN</p>
             <input type="text" id="targetTime" placeholder="目標勉強時間">
             <input type="text" id="keyTask" placeholder="重点課題">
             <button class="btn" onclick="takeOff()">Take Off!</button>
         </div>
+        <div id="loading-panel" style="display:none; text-align:center;">
+            <div class="loading-spinner"></div>
+            <p style="margin-top:10px; font-size:12px;">AI作戦参謀、分析中...</p>
+        </div>
     </div>
 
     <header class="app-header" id="app-header"><div class="header-logo">AERO PASS</div></header>
 
-    <div id="home" class="screen active">
-        <div class="glass-panel" style="text-align: center;">
-            <div style="width: 100px; height: 100px; border-radius: 50%; border: 6px solid var(--ana-blue); margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 20px;">55%</div>
-            <p style="margin-top: 10px; font-size: 12px;">フライト進捗 : 53%</p>
-        </div>
+    <div id="home" class="screen">
         <div class="glass-panel">
-            <p id="dispTime" style="margin-bottom: 8px; font-weight: bold;"></p>
-            <p id="dispTask" style="font-size: 14px; opacity: 0.9;"></p>
+            <h3 style="font-size: 12px; color: var(--ana-blue); margin-bottom: 5px;">✈️ AI STRATEGY REPORT</h3>
+            <div id="aiStrategyContent" class="ai-report">レポートを生成しています...</div>
+        </div>
+        <div class="glass-panel" style="text-align: center; display: flex; align-items: center; justify-content: space-between;">
+            <div style="width: 80px; height: 80px; border-radius: 50%; border: 5px solid var(--ana-blue); display: flex; align-items: center; justify-content: center; font-size: 18px;">55%</div>
+            <div style="text-align: right;">
+                <p id="dispTime" style="font-weight: bold; font-size: 18px;"></p>
+                <p id="dispTask" style="font-size: 12px; opacity: 0.8;"></p>
+            </div>
         </div>
     </div>
 
     <div id="mock" class="screen">
-        <h2 style="font-size: 16px; margin-bottom: 15px;">MOCK EXAMS GROWTH</h2>
+        <div class="glass-panel"><canvas id="mockChart" style="height:200px;"></canvas></div>
         <div class="glass-panel">
-            <div class="chart-container">
-                <canvas id="mockChart"></canvas>
-            </div>
-        </div>
-        <div class="glass-panel">
-            <h3 style="font-size: 14px; margin-bottom: 10px;">模試スコアを入力 (FDR記録)</h3>
+            <h3 style="font-size: 14px; margin-bottom: 10px;">FDR 記録 (点数入力)</h3>
             <div style="display: flex; gap: 5px;">
                 <input type="number" id="engScore" placeholder="英語">
                 <input type="number" id="gen1Score" placeholder="総合I">
                 <input type="number" id="gen2Score" placeholder="総合II">
             </div>
-            <button class="btn" style="padding: 10px;" onclick="addMockRecord()">スコアを記録する</button>
+            <button class="btn" style="padding: 10px;" onclick="addMockRecord()">記録を保存</button>
         </div>
     </div>
 
     <div id="schedule" class="screen"><div class="glass-panel"><h3>SCHEDULE</h3><p>開発中...</p></div></div>
-    <div id="progress" class="screen"><div class="glass-panel"><h3>PROGRESS DATABASE</h3><div id="subject-list"></div></div></div>
+    <div id="progress" class="screen"><div class="glass-panel"><h3>PROGRESS DB</h3><div id="subject-list"></div></div></div>
     <div id="settings" class="screen"><div class="glass-panel"><h3>MY PAGE</h3><button onclick="clearData()" style="color:red; background:none; border:none; margin-top:20px;">全リセット</button></div></div>
 
     <nav id="bottom-nav">
         <div class="nav-item active" onclick="showPage('home', this)"><span class="nav-icon">🏠</span><span>ホーム</span></div>
-        <div class="nav-item" onclick="showPage('schedule', this)"><span class="nav-icon">📅</span><span>スケジュール</span></div>
+        <div class="nav-item" onclick="showPage('schedule', this)"><span class="nav-icon">📅</span><span>計画</span></div>
         <div class="nav-item" onclick="showPage('mock', this)"><span class="nav-icon">🏆</span><span>模擬試験</span></div>
         <div class="nav-item" onclick="showPage('progress', this)"><span class="nav-icon">💼</span><span>進捗DB</span></div>
-        <div class="nav-item" onclick="showPage('settings', this)"><span class="nav-icon">👤</span><span>マイページ</span></div>
+        <div class="nav-item" onclick="showPage('settings', this)"><span class="nav-icon">👤</span><span>設定</span></div>
     </nav>
 
     <script>
-        let myChart; // グラフのインスタンス
-        let mockRecords = []; // 模試データの配列
+        const API_KEY = 'AIzaSyBN94mVXI2Q1jDLHkIZnfDs-RAhGG_2wvY';
+        let myChart;
+        let mockRecords = JSON.parse(localStorage.getItem('mockRecords')) || [];
 
         function initApp() {
             const savedTime = localStorage.getItem('targetTime');
             const savedTask = localStorage.getItem('keyTask');
             if (savedTime && savedTask) {
-                document.getElementById('dispTime').innerText = "目標：" + savedTime;
-                document.getElementById('dispTask').innerText = "重点：" + savedTask;
+                document.getElementById('dispTime').innerText = savedTime;
+                document.getElementById('dispTask').innerText = savedTask;
                 launchToApp();
             }
+        }
+
+        async function fetchAIStrategy(time, task) {
+            const systemPrompt = `あなたは航空大学校合格を目指すTsubasaの専属コーチです。
+            【試験日】2026年7月15日（本日から約79日後）
+            【目標点】285/350点（81.4%）
+            【科目優先】1. 数学(満点狙い), 2. 物理(電磁気苦手克服), 3. 英語(75点キープ)
+            今日の目標時間「${time}」、重点課題「${task}」、これまでの模試記録「${JSON.stringify(mockRecords)}」を踏まえ、
+            やる気が出る150文字程度のアドバイスを航空業界風の用語（テイクオフ、クリアランス等）を交えて日本語で生成してください。`;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt }] }] })
+                });
+                const data = await response.json();
+                return data.candidates[0].content.parts[0].text;
+            } catch (e) {
+                return "通信圏外です。自力でテイクオフしてください！(APIエラー)";
+            }
+        }
+
+        async function takeOff() {
+            const time = document.getElementById('targetTime').value;
+            const task = document.getElementById('keyTask').value;
+            if(!time || !task) return alert('プランを入力してください');
+
+            document.getElementById('input-panel').style.display = 'none';
+            document.getElementById('loading-panel').style.display = 'block';
+
+            localStorage.setItem('targetTime', time);
+            localStorage.setItem('keyTask', task);
+
+            const advice = await fetchAIStrategy(time, task);
+            localStorage.setItem('lastAdvice', advice);
             
-            // 模試データの読み込み
-            const savedMock = localStorage.getItem('mockRecords');
-            if (savedMock) mockRecords = JSON.parse(savedMock);
-            
-            updateChart(); // 初回グラフ描画
+            location.reload();
         }
 
         function launchToApp() {
             document.getElementById('launch-screen').style.display = 'none';
             document.getElementById('app-header').style.display = 'flex';
             document.getElementById('bottom-nav').style.display = 'flex';
-        }
-
-        function takeOff() {
-            const time = document.getElementById('targetTime').value;
-            const task = document.getElementById('keyTask').value;
-            if(!time || !task) return alert('入力してください');
-            localStorage.setItem('targetTime', time);
-            localStorage.setItem('keyTask', task);
-            location.reload();
+            document.getElementById('aiStrategyContent').innerText = localStorage.getItem('lastAdvice') || "戦略を待機中...";
+            updateChart();
         }
 
         function showPage(pageId, element) {
@@ -141,77 +159,39 @@
             document.getElementById(pageId).classList.add('active');
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             element.classList.add('active');
-            
-            // グラフ画面が表示された時に再描画（表示崩れ防止）
             if(pageId === 'mock') updateChart();
         }
 
-        // 模試データの追加
         function addMockRecord() {
             const eng = document.getElementById('engScore').value;
             const g1 = document.getElementById('gen1Score').value;
             const g2 = document.getElementById('gen2Score').value;
-
-            if(!eng || !g1 || !g2) return alert('全スコアを入力してください');
-
-            const record = {
-                date: new Date().toLocaleDateString(),
-                english: parseInt(eng),
-                gen1: parseInt(g1),
-                gen2: parseInt(g2)
-            };
-
-            mockRecords.push(record);
+            if(!eng || !g1 || !g2) return alert('入力してください');
+            mockRecords.push({ date: new Date().toLocaleDateString(), english: parseInt(eng), gen1: parseInt(g1), gen2: parseInt(g2) });
             localStorage.setItem('mockRecords', JSON.stringify(mockRecords));
-            
-            // 入力欄をクリア
-            document.getElementById('engScore').value = "";
-            document.getElementById('gen1Score').value = "";
-            document.getElementById('gen2Score').value = "";
-
             updateChart();
-            alert('FDR記録（模試データ）を保存しました！');
         }
 
-        // Chart.jsによるグラフ描画
         function updateChart() {
-            const ctx = document.getElementById('mockChart').getContext('2d');
-            
-            // 既存のグラフがあれば破棄して作り直す
+            const canvas = document.getElementById('mockChart');
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
             if (myChart) myChart.destroy();
-
-            const labels = mockRecords.map(r => r.date);
-            const dataEng = mockRecords.map(r => r.english);
-            const dataG1 = mockRecords.map(r => r.gen1);
-            const dataG2 = mockRecords.map(r => r.gen2);
-
             myChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: labels.length ? labels : ['データなし'],
+                    labels: mockRecords.map(r => r.date),
                     datasets: [
-                        { label: '英語', data: dataEng, borderColor: '#fff', backgroundColor: '#fff', tension: 0.3 },
-                        { label: '総合I', data: dataG1, borderColor: '#007FFF', backgroundColor: '#007FFF', tension: 0.3 },
-                        { label: '総合II', data: dataG2, borderColor: '#f1c40f', backgroundColor: '#f1c40f', tension: 0.3 }
+                        { label: '英語', data: mockRecords.map(r => r.english), borderColor: '#fff' },
+                        { label: '総I', data: mockRecords.map(r => r.gen1), borderColor: '#007FFF' },
+                        { label: '総II', data: mockRecords.map(r => r.gen2), borderColor: '#f1c40f' }
                     ]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: true, max: 150, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#fff' } },
-                        x: { grid: { display: false }, ticks: { color: '#fff' } }
-                    },
-                    plugins: {
-                        legend: { labels: { color: '#fff', font: { size: 10 } } }
-                    }
-                }
+                options: { responsive: true, scales: { y: { beginAtZero: true, max: 150 } } }
             });
         }
 
-        function clearData() {
-            if(confirm('全データを削除しますか？')) { localStorage.clear(); location.reload(); }
-        }
+        function clearData() { if(confirm('全リセット？')) { localStorage.clear(); location.reload(); } }
     </script>
 </body>
 </html>

@@ -9,6 +9,7 @@
         :root {
             --ana-navy: #003399; --ana-blue: #007FFF;
             --glass-bg: rgba(255, 255, 255, 0.1); --glass-border: rgba(255, 255, 255, 0.2);
+            --danger: #ff4d4d;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: linear-gradient(135deg, #001f5c, #003399); color: white; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
@@ -28,12 +29,16 @@
         .nav-item.active { color: var(--ana-navy); font-weight: bold; }
         .nav-icon { font-size: 24px; margin-bottom: 2px; }
 
-        input { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 10px; padding: 12px; color: white; margin-top: 10px; outline: none; }
+        input, select { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 10px; padding: 10px; color: white; margin-top: 5px; outline: none; font-size: 14px; }
         .btn { background: var(--ana-blue); color: white; border: none; padding: 15px; border-radius: 30px; width: 100%; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; }
         
-        .ai-report { font-size: 13px; line-height: 1.6; color: #eef; font-style: italic; white-space: pre-wrap; }
-        .loading-spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        /* スケジュールリスト用 */
+        .book-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .deadline-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-right: 5px; }
+        .tag-target { background: #3498db; }
+        .tag-final { background: #e67e22; }
+        .progress-bar-bg { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-top: 8px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: var(--ana-blue); transition: 0.3s; }
     </style>
 </head>
 <body onload="initApp()">
@@ -47,8 +52,8 @@
             <button class="btn" onclick="takeOff()">Take Off!</button>
         </div>
         <div id="loading-panel" style="display:none; text-align:center;">
-            <div class="loading-spinner"></div>
-            <p style="margin-top:10px; font-size:12px;">AI作戦参謀、分析中...</p>
+            <div style="width: 20px; height: 20px; border: 3px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; display: inline-block;"></div>
+            <p style="margin-top:10px;">AI作戦参謀、分析中...</p>
         </div>
     </div>
 
@@ -57,82 +62,98 @@
     <div id="home" class="screen">
         <div class="glass-panel">
             <h3 style="font-size: 12px; color: var(--ana-blue); margin-bottom: 5px;">✈️ AI STRATEGY REPORT</h3>
-            <div id="aiStrategyContent" class="ai-report">レポートを生成しています...</div>
+            <div id="aiStrategyContent" style="font-size: 13px; font-style: italic; line-height: 1.6;">生成中...</div>
         </div>
-        <div class="glass-panel" style="text-align: center; display: flex; align-items: center; justify-content: space-between;">
-            <div style="width: 80px; height: 80px; border-radius: 50%; border: 5px solid var(--ana-blue); display: flex; align-items: center; justify-content: center; font-size: 18px;">55%</div>
+        <div class="glass-panel" style="display: flex; align-items: center; justify-content: space-between;">
+            <div id="daysLeft" style="font-size: 24px; font-weight: bold;">--日</div>
             <div style="text-align: right;">
-                <p id="dispTime" style="font-weight: bold; font-size: 18px;"></p>
+                <p id="dispTime" style="font-weight: bold;"></p>
                 <p id="dispTask" style="font-size: 12px; opacity: 0.8;"></p>
             </div>
+        </div>
+    </div>
+
+    <div id="schedule" class="screen">
+        <h2 style="font-size: 16px; margin-bottom: 15px;">FLIGHT SCHEDULE (Deadlines)</h2>
+        <div id="bookList" class="glass-panel">
+            </div>
+        <div class="glass-panel">
+            <h3 style="font-size: 14px; margin-bottom: 10px;">教材を追加</h3>
+            <input type="text" id="newBookName" placeholder="参考書名（例：青チャート）">
+            <div style="display: flex; gap: 5px; margin-top: 10px;">
+                <div style="flex:1;"><label style="font-size:10px;">目標日</label><input type="date" id="newTargetDate"></div>
+                <div style="flex:1;"><label style="font-size:10px;">最終期限</label><input type="date" id="newFinalDate"></div>
+            </div>
+            <button class="btn" style="padding: 10px; font-size: 14px;" onclick="addBook()">教材をフライトプランに追加</button>
         </div>
     </div>
 
     <div id="mock" class="screen">
         <div class="glass-panel"><canvas id="mockChart" style="height:200px;"></canvas></div>
         <div class="glass-panel">
-            <h3 style="font-size: 14px; margin-bottom: 10px;">FDR 記録 (点数入力)</h3>
+            <h3>SCORE RECORD</h3>
             <div style="display: flex; gap: 5px;">
                 <input type="number" id="engScore" placeholder="英語">
-                <input type="number" id="gen1Score" placeholder="総合I">
-                <input type="number" id="gen2Score" placeholder="総合II">
+                <input type="number" id="gen1Score" placeholder="総I">
+                <input type="number" id="gen2Score" placeholder="総II">
             </div>
             <button class="btn" style="padding: 10px;" onclick="addMockRecord()">記録を保存</button>
         </div>
     </div>
 
-    <div id="schedule" class="screen"><div class="glass-panel"><h3>SCHEDULE</h3><p>開発中...</p></div></div>
-    <div id="progress" class="screen"><div class="glass-panel"><h3>PROGRESS DB</h3><div id="subject-list"></div></div></div>
-    <div id="settings" class="screen"><div class="glass-panel"><h3>MY PAGE</h3><button onclick="clearData()" style="color:red; background:none; border:none; margin-top:20px;">全リセット</button></div></div>
+    <div id="progress" class="screen">
+        <div class="glass-panel" id="subject-list"></div>
+    </div>
+
+    <div id="settings" class="screen">
+        <div class="glass-panel"><h3>PILOT INFO</h3><p>Tsubasa 訓練生</p></div>
+        <button onclick="clearData()" style="color:var(--danger); border:none; background:none; margin-top:20px; width:100%;">全データ初期化</button>
+    </div>
 
     <nav id="bottom-nav">
-        <div class="nav-item active" onclick="showPage('home', this)"><span class="nav-icon">🏠</span><span>ホーム</span></div>
-        <div class="nav-item" onclick="showPage('schedule', this)"><span class="nav-icon">📅</span><span>計画</span></div>
-        <div class="nav-item" onclick="showPage('mock', this)"><span class="nav-icon">🏆</span><span>模擬試験</span></div>
-        <div class="nav-item" onclick="showPage('progress', this)"><span class="nav-icon">💼</span><span>進捗DB</span></div>
-        <div class="nav-item" onclick="showPage('settings', this)"><span class="nav-icon">👤</span><span>設定</span></div>
+        <div class="nav-item active" onclick="showPage('home', this)">🏠<br>ホーム</div>
+        <div class="nav-item" onclick="showPage('schedule', this)">📅<br>計画</div>
+        <div class="nav-item" onclick="showPage('mock', this)">🏆<br>模試</div>
+        <div class="nav-item" onclick="showPage('progress', this)">💼<br>進捗DB</div>
+        <div class="nav-item" onclick="showPage('settings', this)">👤<br>設定</div>
     </nav>
 
     <script>
-        const API_KEY = 'AIzaSyBN94mVXI2Q1jDLHkIZnfDs-RAhGG_2wvY';
-        let myChart;
+        const API_KEY = 'ここにあなたのAPIキーを入れる';
+        const EXAM_DATE = new Date('2026-07-15');
+        
+        let books = JSON.parse(localStorage.getItem('books')) || [
+            { name: "青チャート 1A2B", target: "2025-06-30", final: "2025-09-30", progress: 30 },
+            { name: "物理のエッセンス", target: "2025-09-30", final: "2025-12-31", progress: 10 }
+        ];
         let mockRecords = JSON.parse(localStorage.getItem('mockRecords')) || [];
 
         function initApp() {
+            updateCountdown();
+            renderBooks();
             const savedTime = localStorage.getItem('targetTime');
             const savedTask = localStorage.getItem('keyTask');
             if (savedTime && savedTask) {
-                document.getElementById('dispTime').innerText = savedTime;
-                document.getElementById('dispTask').innerText = savedTask;
-                launchToApp();
+                document.getElementById('dispTime').innerText = "目標：" + savedTime;
+                document.getElementById('dispTask').innerText = "重点：" + savedTask;
+                document.getElementById('launch-screen').style.display = 'none';
+                document.getElementById('app-header').style.display = 'flex';
+                document.getElementById('bottom-nav').style.display = 'flex';
+                document.getElementById('aiStrategyContent').innerText = localStorage.getItem('lastAdvice') || "準備中...";
             }
         }
 
-        async function fetchAIStrategy(time, task) {
-            const systemPrompt = `あなたは航空大学校合格を目指すTsubasaの専属コーチです。
-            【試験日】2026年7月15日（本日から約79日後）
-            【目標点】285/350点（81.4%）
-            【科目優先】1. 数学(満点狙い), 2. 物理(電磁気苦手克服), 3. 英語(75点キープ)
-            今日の目標時間「${time}」、重点課題「${task}」、これまでの模試記録「${JSON.stringify(mockRecords)}」を踏まえ、
-            やる気が出る150文字程度のアドバイスを航空業界風の用語（テイクオフ、クリアランス等）を交えて日本語で生成してください。`;
-
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt }] }] })
-                });
-                const data = await response.json();
-                return data.candidates[0].content.parts[0].text;
-            } catch (e) {
-                return "通信圏外です。自力でテイクオフしてください！(APIエラー)";
-            }
+        function updateCountdown() {
+            const today = new Date();
+            const diff = EXAM_DATE - today;
+            const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+            document.getElementById('daysLeft').innerText = "あと " + days + " 日";
         }
 
         async function takeOff() {
             const time = document.getElementById('targetTime').value;
             const task = document.getElementById('keyTask').value;
-            if(!time || !task) return alert('プランを入力してください');
+            if(!time || !task) return alert('入力してください');
 
             document.getElementById('input-panel').style.display = 'none';
             document.getElementById('loading-panel').style.display = 'block';
@@ -140,18 +161,61 @@
             localStorage.setItem('targetTime', time);
             localStorage.setItem('keyTask', task);
 
-            const advice = await fetchAIStrategy(time, task);
-            localStorage.setItem('lastAdvice', advice);
+            const prompt = `あなたは航空大学校合格コーチです。試験まで${document.getElementById('daysLeft').innerText}。今日${time}勉強し、${task}をやるTsubasaへ、航空用語を交えた熱い指導を150字で。`;
             
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                const data = await res.json();
+                localStorage.setItem('lastAdvice', data.candidates[0].content.parts[0].text);
+            } catch (e) {
+                localStorage.setItem('lastAdvice', "通信状況不良。自力で高度を維持せよ！");
+            }
             location.reload();
         }
 
-        function launchToApp() {
-            document.getElementById('launch-screen').style.display = 'none';
-            document.getElementById('app-header').style.display = 'flex';
-            document.getElementById('bottom-nav').style.display = 'flex';
-            document.getElementById('aiStrategyContent').innerText = localStorage.getItem('lastAdvice') || "戦略を待機中...";
-            updateChart();
+        function renderBooks() {
+            const area = document.getElementById('bookList');
+            area.innerHTML = "";
+            books.forEach((book, idx) => {
+                const today = new Date();
+                const final = new Date(book.final);
+                const isOver = today > final;
+                
+                area.innerHTML += `
+                    <div class="book-item">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-weight:bold; font-size:14px; ${isOver ? 'color:var(--danger)' : ''}">${book.name}</span>
+                            <span style="font-size:12px;">${book.progress}%</span>
+                        </div>
+                        <div style="margin-top:5px;">
+                            <span class="deadline-tag tag-target">目標: ${book.target}</span>
+                            <span class="deadline-tag tag-final">期限: ${book.final}</span>
+                        </div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${book.progress}%"></div></div>
+                        <input type="range" min="0" max="100" value="${book.progress}" onchange="updateBookProgress(${idx}, this.value)" style="margin-top:5px;">
+                    </div>
+                `;
+            });
+        }
+
+        function updateBookProgress(idx, val) {
+            books[idx].progress = val;
+            localStorage.setItem('books', JSON.stringify(books));
+            renderBooks();
+        }
+
+        function addBook() {
+            const name = document.getElementById('newBookName').value;
+            const target = document.getElementById('newTargetDate').value;
+            const final = document.getElementById('newFinalDate').value;
+            if(!name || !target || !final) return alert('全項目入力してください');
+            books.push({ name, target, final, progress: 0 });
+            localStorage.setItem('books', JSON.stringify(books));
+            renderBooks();
         }
 
         function showPage(pageId, element) {
@@ -159,36 +223,6 @@
             document.getElementById(pageId).classList.add('active');
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             element.classList.add('active');
-            if(pageId === 'mock') updateChart();
-        }
-
-        function addMockRecord() {
-            const eng = document.getElementById('engScore').value;
-            const g1 = document.getElementById('gen1Score').value;
-            const g2 = document.getElementById('gen2Score').value;
-            if(!eng || !g1 || !g2) return alert('入力してください');
-            mockRecords.push({ date: new Date().toLocaleDateString(), english: parseInt(eng), gen1: parseInt(g1), gen2: parseInt(g2) });
-            localStorage.setItem('mockRecords', JSON.stringify(mockRecords));
-            updateChart();
-        }
-
-        function updateChart() {
-            const canvas = document.getElementById('mockChart');
-            if(!canvas) return;
-            const ctx = canvas.getContext('2d');
-            if (myChart) myChart.destroy();
-            myChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: mockRecords.map(r => r.date),
-                    datasets: [
-                        { label: '英語', data: mockRecords.map(r => r.english), borderColor: '#fff' },
-                        { label: '総I', data: mockRecords.map(r => r.gen1), borderColor: '#007FFF' },
-                        { label: '総II', data: mockRecords.map(r => r.gen2), borderColor: '#f1c40f' }
-                    ]
-                },
-                options: { responsive: true, scales: { y: { beginAtZero: true, max: 150 } } }
-            });
         }
 
         function clearData() { if(confirm('全リセット？')) { localStorage.clear(); location.reload(); } }
